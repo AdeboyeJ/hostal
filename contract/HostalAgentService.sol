@@ -24,6 +24,7 @@ interface IERC20Token {
 
 contract HostalService {
 
+
   struct Hire {
     address hirer;
     uint timestamp;
@@ -39,27 +40,22 @@ contract HostalService {
     uint rate;
     uint hiresLength;
     mapping (uint => Hire) hires;
+    mapping (address => bool) hasHired;
   }
 
   uint internal servicesLength = 0;
   mapping (uint => Service) internal services;
   address internal cUsdTokenAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
 
-  event writeServiceEvent(
-    address user,
-    string name,
-    string image,
-    string description,
-    string location,
-    string contact,
+  event newServiceListed(
+    address indexed agent,
     uint rate
   );
 
-  event hireServiceEvent(
-    address user,
-    address hirer,
+  event newAgentHired(
+    address indexed agent,
     uint amount,
-    uint timestamp
+    address indexed hirer
   );
 
   function writeService(
@@ -84,13 +80,8 @@ contract HostalService {
 
     servicesLength++;
 
-    emit writeServiceEvent(
+    emit newServiceListed(
       newService.user,
-      newService.name,
-      newService.image,
-      newService.description,
-      newService.location,
-      newService.contact,
       newService.rate
     );
   }
@@ -118,6 +109,7 @@ contract HostalService {
     );
   }
 
+  //Returns details of the hirer of the agent
   function readServiceHire(uint _serviceIndex, uint _hireIndex) external view returns (
     address hirer,
     uint timestamp
@@ -132,6 +124,12 @@ contract HostalService {
   function hireService(uint _index) external {
     Service storage service = services[_index];
 
+    /*Require statements to ensure that the agent cannot hire himself 
+      and one user can hire one agent only one time
+    */
+    require(tx.origin != service.user, "You cannot Buy your own service");
+    require(service.hasHired[tx.origin] == false, "You can book the agent only one time");
+
     Hire memory newHire = Hire(
       tx.origin,
       block.timestamp
@@ -143,13 +141,13 @@ contract HostalService {
     );
 
     service.hires[service.hiresLength] = newHire;
+    service.hasHired[tx.origin] = true;
     service.hiresLength++;
 
-    emit hireServiceEvent(
+    emit newAgentHired(
       service.user,
-      newHire.hirer,
       service.rate,
-      newHire.timestamp
+      newHire.hirer
     );
   }
 
