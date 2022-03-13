@@ -71,6 +71,8 @@ contract Hostal {
       _numOfRooms
     );
     hostelsLength++;
+
+    emit newHostal(msg.sender, _price);
   }
 
   //Function to add yourself as an agent by calling the function in the service contract
@@ -162,6 +164,7 @@ contract Hostal {
       "hostels fee transfer failed."
     );
 
+
     require(
       IERC20Token(cUsdTokenAddress).transferFrom(
         msg.sender,
@@ -173,6 +176,7 @@ contract Hostal {
 
     hostels[_index].numOfRooms--;
     hostels[_index].sold++;
+    emit hostalBought(hostels[_index].owner, hostels[_index].price, msg.sender);
   }
 
   //Function through which only the owner can change the number of hostels available
